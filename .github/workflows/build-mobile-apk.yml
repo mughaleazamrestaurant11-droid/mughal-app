@@ -3,16 +3,17 @@
 # Why this exists: the shop PC never needs Gradle, Android Studio or Java.
 # Push the code to GitHub and this file builds the APK automatically;
 # download it from the "Artifacts" area of the finished run.
+#
+# The Android project is located automatically, so this works whether the
+# repository holds just the mobile app (project at the root) or the whole
+# shop project (mobile app inside mughal_mobile/).
 
 name: Build mobile APK
 
 on:
-  # Build as soon as the app code is pushed...
+  # Build as soon as anything is pushed...
   push:
     branches: ["**"]
-    paths:
-      - "mughal_mobile/**"
-      - ".github/workflows/build-mobile-apk.yml"
   # ...and allow a manual build from the Actions tab.
   workflow_dispatch:
 
@@ -24,6 +25,20 @@ jobs:
     steps:
       - name: Check out the code
         uses: actions/checkout@v4
+
+      - name: Find the Android project
+        id: proj
+        run: |
+          if [ -f settings.gradle.kts ]; then
+            echo "dir=." >> "$GITHUB_OUTPUT"
+          elif [ -f mughal_mobile/settings.gradle.kts ]; then
+            echo "dir=mughal_mobile" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Android project (settings.gradle.kts) not found in this repository."
+            echo "Repository contents:" && ls -la
+            exit 1
+          fi
+          echo "Building in: $(cat "$GITHUB_OUTPUT")"
 
       - name: Set up Java 17 (only for the build machine, not for your PC)
         uses: actions/setup-java@v4
@@ -38,13 +53,13 @@ jobs:
 
       # assembleDebug = the APK the shop installs (it is signed and installable).
       - name: Build the APK
-        working-directory: mughal_mobile
+        working-directory: ${{ steps.proj.outputs.dir }}
         run: gradle --no-daemon :app:assembleDebug
 
       - name: Give the APK a clear name
         run: |
           mkdir -p apk-out
-          cp mughal_mobile/app/build/outputs/apk/debug/app-debug.apk \
+          cp "${{ steps.proj.outputs.dir }}/app/build/outputs/apk/debug/app-debug.apk" \
              "apk-out/MughalTraders-mobile-v${GITHUB_RUN_NUMBER}.apk"
           ls -l apk-out
 
