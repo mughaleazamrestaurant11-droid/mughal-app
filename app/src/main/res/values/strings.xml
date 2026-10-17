@@ -11,4 +11,6 @@
     <string name="offline_start">waiting for the main PC\u2026</string>
     <string name="try_now">Try now</string>
     <string name="change_pc">Change main PC address</string>
+
+    <string name="splash_sub">Complete ERP &amp; Attendance</string>
 </resources>

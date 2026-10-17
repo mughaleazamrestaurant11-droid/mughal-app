@@ -166,4 +166,49 @@
                 android:gravity="center" />
         </LinearLayout>
     </ScrollView>
+
+    <!-- Branded splash: covers the white screen while the WebView is still
+         drawing. It stays until the shop page has really appeared (or the
+         setup / waiting screen is up), so the app never flashes white. -->
+    <LinearLayout
+        android:id="@+id/splash_panel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#0f172a"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="104dp"
+            android:layout_height="104dp"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/splash_logo" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:letterSpacing="0.18"
+            android:text="@string/app_name"
+            android:textColor="#f8fafc"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="9dp"
+            android:text="@string/splash_sub"
+            android:textColor="#94a3b8"
+            android:textSize="14sp" />
+
+        <ProgressBar
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginTop="30dp"
+            android:indeterminate="true"
+            android:indeterminateTint="#f43f5e" />
+    </LinearLayout>
 </FrameLayout>

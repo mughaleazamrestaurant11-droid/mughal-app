@@ -3,10 +3,13 @@ package com.mughaltraders.mobile
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.view.View
+import android.webkit.ValueCallback
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -37,6 +40,7 @@ class MainActivity : Activity() {
     private lateinit var webView: WebView
     private lateinit var offlinePanel: View
     private lateinit var setupPanel: View
+    private lateinit var splashPanel: View
     private lateinit var offlineStatus: TextView
     private lateinit var setupStatus: TextView
     private lateinit var serverInput: EditText
@@ -47,11 +51,22 @@ class MainActivity : Activity() {
     private var server = ""      // "192.168.1.10:8765" - the MAIN PC
     private var checks = 0       // how many times the waiting screen asked
 
+    // Branded splash: shown from cold start so the phone never flashes white
+    // while the WebView is still drawing the shop page.
+    private val minSplashMs = 1300L   // let the logo actually be seen
+    private val maxSplashMs = 9000L   // never trap the user behind it
+    private var splashAt = 0L
+    private var contentReady = false  // the shop page has really drawn itself
+    private var splashGone = false
+
     // Waits for the main PC and opens the shop by itself when it answers.
     private lateinit var waiter: Runnable
 
     // Guards the whole session: the phone never keeps working on a dead main PC.
     private lateinit var keepAlive: Runnable
+
+    // Holds the branded splash until the shop page has really drawn itself.
+    private lateinit var splashPoller: Runnable
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,9 +77,13 @@ class MainActivity : Activity() {
         webView = findViewById(R.id.web_view)
         offlinePanel = findViewById(R.id.offline_panel)
         setupPanel = findViewById(R.id.setup_panel)
+        splashPanel = findViewById(R.id.splash_panel)
         offlineStatus = findViewById(R.id.offline_status)
         setupStatus = findViewById(R.id.setup_status)
         serverInput = findViewById(R.id.server_input)
+
+        // Anything the WebView paints late is navy, never white.
+        webView.setBackgroundColor(Color.parseColor("#0F172A"))
 
         val s = webView.settings
         s.javaScriptEnabled = true
@@ -117,12 +136,47 @@ class MainActivity : Activity() {
             }
         }
 
+        // Holds the splash until the shop page has really drawn itself (or
+        // the setup / waiting screen is up), with a hard stop so the user is
+        // never stuck behind the logo.
+        splashPoller = object : Runnable {
+            override fun run() {
+                if (splashGone || isFinishing) return
+                try {
+                    // true once React has put the app into #root
+                    webView.evaluateJavascript(
+                        "(document.getElementById('root') || { childElementCount: 0 })" +
+                            ".childElementCount > 0",
+                        ValueCallback { v -> contentReady = v == "true" }
+                    )
+                } catch (ignored: Exception) {
+                }
+                val elapsed = SystemClock.uptimeMillis() - splashAt
+                val panelUp = setupPanel.visibility == View.VISIBLE ||
+                    offlinePanel.visibility == View.VISIBLE
+                if ((panelUp || contentReady) && elapsed > minSplashMs) fadeSplash()
+                else if (elapsed > maxSplashMs) fadeSplash()
+                else ui.postDelayed(this, 250)
+            }
+        }
+
         findViewById<Button>(R.id.btn_connect).setOnClickListener { connectTried() }
         findViewById<Button>(R.id.btn_try_now).setOnClickListener { startWaiting() }
         findViewById<Button>(R.id.btn_change).setOnClickListener { showSetup() }
 
+        splashAt = SystemClock.uptimeMillis()
+        ui.post(splashPoller)
+
         server = prefs.getString("server", "") ?: ""
         if (server.isEmpty()) showSetup() else openShop()
+    }
+
+    private fun fadeSplash() {
+        if (splashGone) return
+        splashGone = true
+        ui.removeCallbacks(splashPoller)
+        splashPanel.animate().alpha(0f).setDuration(280)
+            .withEndAction { splashPanel.visibility = View.GONE }.start()
     }
 
     // -------- first-run setup: type the main PC address once --------
@@ -218,12 +272,14 @@ class MainActivity : Activity() {
         super.onPause()
         ui.removeCallbacks(waiter)
         ui.removeCallbacks(keepAlive)
+        ui.removeCallbacks(splashPoller)
         webView.onPause()
     }
 
     override fun onResume() {
         super.onResume()
         webView.onResume()
+        if (!splashGone) ui.post(splashPoller)
         if (server.isNotEmpty()) {
             if (offlinePanel.visibility == View.VISIBLE) startWaiting()
             ui.postDelayed(keepAlive, 20000)
