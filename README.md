@@ -24,14 +24,23 @@ nothing to back up on the phone.
 
 ## Getting the APK (no Android Studio, no Gradle, nothing to install)
 
-You never build this on your PC. GitHub builds it for you:
+You never build this on your PC. GitHub builds it for you. This folder **is
+the repository**: `https://github.com/mughaleazamrestaurant11-droid/mughal-app`
+(`app\`, `settings.gradle.kts` and `.github\` sit at the repo's top level).
 
-1. Put this whole folder on GitHub (see the main README for the exact commands).
-2. Open the repository on GitHub → **Actions** tab.
-3. The **Build mobile APK** job runs by itself on every push.
-4. When it finishes (a few minutes), open that run → **Artifacts** →
-   download **MughalTraders-mobile-apk**. It is a `.zip` containing the APK.
-5. Copy the APK to the phone (USB, WhatsApp, SD card…) and open it to
+**To rebuild after any change** — from inside this `mughal_mobile` folder:
+```
+git add .
+git commit -m "changed ..."
+git push
+```
+
+1. Open the repository on GitHub → **Actions** tab.
+2. The **Build mobile APK** job runs by itself on every push.
+3. When it finishes (a couple of minutes) the run turns green; open it →
+   **Artifacts** → download **MughalTraders-mobile-apk**. It is a `.zip`
+   containing the APK.
+4. Copy the APK to the phone (USB, WhatsApp, SD card…) and open it to
    install. The phone may ask to allow "install from unknown sources" — that
    is normal for an app installed this way.
 
@@ -53,11 +62,10 @@ git push origin v1
 | `app/src/main/res/layout/activity_main.xml` | The three screens' layout |
 | `app/src/main/AndroidManifest.xml` | App name, internet permission, LAN (http) allowed |
 | `app/build.gradle.kts` | Build settings — no third-party libraries at all |
-| `../.github/workflows/build-mobile-apk.yml` | The cloud build that makes the APK |
+| `.github/workflows/build-mobile-apk.yml` | The cloud build that makes the APK |
 
 ## Version numbering
 
 `versionCode` is taken from the GitHub build number automatically, so every
 push produces an installable update over the previous one.
-"# mughal-app" 
-"# mughal-app" 
+
