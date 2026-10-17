@@ -1,0 +1,8 @@
+# Never commit these - they are rebuilt by the cloud and contain PC-specific paths.
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+captures/
+.DS_Store

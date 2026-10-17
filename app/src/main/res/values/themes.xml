@@ -1,0 +1,9 @@
+<resources>
+    <!-- No AppCompat library is used: plain platform theme keeps the app
+         tiny and the cloud build fast. -->
+    <style name="Theme.MughalTraders" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/brand_navy</item>
+        <item name="android:windowBackground">@color/brand_navy</item>
+        <item name="android:colorAccent">@color/brand_rose</item>
+    </style>
+</resources>
